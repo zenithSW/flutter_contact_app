@@ -23,11 +23,14 @@ class MultiContactPage extends StatefulWidget {
 class _MultiContactPageState extends State<MultiContactPage> {
   List<Contact> _contacts = new List<Contact>();
   List<CustomContact> _uiCustomContacts = List<CustomContact>();
+  List<CustomContact> _EmailListCustomContact= List<CustomContact>();
   List<CustomContact> _allContacts = List<CustomContact>();
+  bool isNameDisplayed  = true;
   bool _isLoading = false;
   bool _isSelectedContactsView = false;
   String floatingButtonLabel;
   Color floatingButtonColor;
+  String email;
   IconData icon;
 
   _MultiContactPageState({
@@ -51,12 +54,21 @@ class _MultiContactPageState extends State<MultiContactPage> {
       body: !_isLoading
           ? Container(
         child: ListView.builder(
-          itemCount: _uiCustomContacts?.length,
+          itemCount: isNameDisplayed?_uiCustomContacts?.length:_EmailListCustomContact?.length ,
           itemBuilder: (BuildContext context, int index) {
-            CustomContact _contact = _uiCustomContacts[index];
-            var _phonesList = _contact.contact.phones.toList();
 
-            return _buildListTile(_contact, _phonesList);
+            if(isNameDisplayed){
+              CustomContact _contact = _uiCustomContacts[index];
+              var _phonesList = _contact.contact.phones.toList();
+
+              return _buildListTile(_contact, _phonesList,isNameDisplayed);
+            }else{
+              CustomContact _contact = _EmailListCustomContact[index];
+              var _phonesList = _contact.contact.phones.toList();
+
+              return _buildListTile(_contact, _phonesList,isNameDisplayed);
+            }
+
           },
         ),
       )
@@ -75,9 +87,26 @@ class _MultiContactPageState extends State<MultiContactPage> {
 
   void _onSubmit() {
     setState(() {
+      isNameDisplayed = false;
       if (!_isSelectedContactsView) {
-        _uiCustomContacts =
-            _allContacts.where((contact) => contact.isChecked == true).toList();
+        var   _CustomContacts = _allContacts.where((contact) => contact.isChecked == true ).toList();
+        List<String>  emailList = new List<String>();
+        for(int i = 0 ;i<_CustomContacts.length;i++ ){
+          var tempContact ;
+
+          _CustomContacts[i].contact.emails.forEach((item) => {
+          tempContact = new CustomContact(contact: _CustomContacts[i].contact, email: "", isChecked: true),
+              tempContact.email = item.value,
+            _EmailListCustomContact.add(tempContact),
+            emailList.add(item.value),
+          });
+        }
+        print(emailList);
+       for(int i=0; i< _EmailListCustomContact.length;i++){
+         print(_EmailListCustomContact[i].email);
+       }
+        _uiCustomContacts = _CustomContacts;
+
         _isSelectedContactsView = true;
         _restateFloatingButton(
           widget.reloadLabel,
@@ -96,17 +125,18 @@ class _MultiContactPageState extends State<MultiContactPage> {
     });
   }
 
-  ListTile _buildListTile(CustomContact c, List<Item> list) {
+  ListTile _buildListTile(CustomContact c, List<Item> list,bool isNameDisplayed) {
     return ListTile(
       leading: (c.contact.avatar != null)
           ? CircleAvatar(backgroundImage: MemoryImage(c.contact.avatar))
           : CircleAvatar(
         child: Text(
+          isNameDisplayed?
             (c.contact.displayName[0] +
-                c.contact.displayName[1].toUpperCase()),
+                c.contact.displayName[1].toUpperCase()):c.email,
             style: TextStyle(color: Colors.white)),
       ),
-      title: Text(c.contact.displayName ?? ""),
+      title: Text(isNameDisplayed ? (c.contact.displayName ?? ""):c.email),
       subtitle: list.length >= 1 && list[0]?.value != null
           ? Text(list[0].value)
           : Text(''),
@@ -136,7 +166,7 @@ class _MultiContactPageState extends State<MultiContactPage> {
   }
 
   void _populateContacts(Iterable<Contact> contacts) {
-    _contacts = contacts.where((item) => item.displayName != null).toList();
+    _contacts = contacts.where((item) => item.displayName != null && item.emails.length >0).toList();
     _contacts.sort((a, b) => a.displayName.compareTo(b.displayName));
     _allContacts =
         _contacts.map((contact) => CustomContact(contact: contact)).toList();
@@ -165,16 +195,17 @@ class _MultiContactPageState extends State<MultiContactPage> {
       );
     }
   }
-  // Future<bool> getContactsPermission() =>
-  //     SimplePermissions.requestPermission(Permission.ReadContacts);
+// Future<bool> getContactsPermission() =>
+//     SimplePermissions.requestPermission(Permission.ReadContacts);
 }
 
 class CustomContact {
   final Contact contact;
   bool isChecked;
-
+  String email;
   CustomContact({
     this.contact,
+    this.email,
     this.isChecked = false,
   });
 }
