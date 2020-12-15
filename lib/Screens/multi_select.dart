@@ -8,7 +8,7 @@ class MultiContactPage extends StatefulWidget {
   final String title;
   // declared strings for the widget
   final String reloadLabel = 'Reload!';
-  final String fireLabel = 'Select';
+  final String fireLabel = 'Done';
   final Color floatingButtonColor = Colors.red;
   final IconData reloadIcon = Icons.refresh;
   final IconData fireIcon = Icons.filter_center_focus;
@@ -55,7 +55,7 @@ class _MultiContactPageState extends State<MultiContactPage> {
       ),
       body: !_isLoading
           ? Container(
-        child: ListView.builder(
+        child: _uiCustomContacts?.length >0 ?  ListView.builder(
           itemCount: isNameDisplayed?_uiCustomContacts?.length:_EmailListCustomContact?.length ,
           itemBuilder: (BuildContext context, int index) {
 
@@ -72,17 +72,18 @@ class _MultiContactPageState extends State<MultiContactPage> {
             }
 
           },
-        ),
+        ): Text("Please Check a Contact",style: TextStyle(fontSize: 20.0) ,),
       )
           : Center(
         child: CircularProgressIndicator(),
       ),
-      floatingActionButton: new FloatingActionButton.extended(
+         floatingActionButton: isNameDisplayed ? FloatingActionButton.extended(
+
         backgroundColor: floatingButtonColor,
         onPressed: _onSubmit,
         icon: Icon(icon),
         label: Text(floatingButtonLabel),
-      ),
+      ):null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
@@ -97,6 +98,7 @@ class _MultiContactPageState extends State<MultiContactPage> {
           var tempContact ;
 
           _CustomContacts[i].contact.emails.forEach((item) => {
+
           tempContact = new CustomContact(contact: _CustomContacts[i].contact, email: "", isChecked: true),
               tempContact.email = item.value,
             _EmailListCustomContact.add(tempContact),
@@ -108,7 +110,6 @@ class _MultiContactPageState extends State<MultiContactPage> {
          print(_EmailListCustomContact[i].email);
        }
         _uiCustomContacts = _CustomContacts;
-
         _isSelectedContactsView = true;
         _restateFloatingButton(
           widget.reloadLabel,
@@ -134,22 +135,36 @@ class _MultiContactPageState extends State<MultiContactPage> {
           ? CircleAvatar(backgroundImage: MemoryImage(c.contact.avatar))
           : CircleAvatar(
         child: Text(
-          isNameDisplayed?
             (c.contact.displayName[0] +
-                c.contact.displayName[1].toUpperCase()):c.email,
+                c.contact.displayName[1].toUpperCase()),
             style: TextStyle(color: Colors.white)),
       ),
       title: Text(isNameDisplayed ? (c.contact.displayName ?? ""):c.email),
       subtitle: list.length >= 1 && list[0]?.value != null
-          ? Text(list[0].value)
-          : Text(''),
+          ? Column(children: [
+            Row(
+             children: [
+               Text(list[0].value),
+             ],
+            ),
+            Row(
+              children: [
+                Text(c.contact.emails.first.value),
+              ],
+            ),
+
+
+      ],)
+          : Text(c.contact.emails.first.value),
       trailing: Checkbox(
           activeColor: Colors.green,
           value: c.isChecked,
           onChanged: (bool value) {
             setState(() {
               c.isChecked = value;
+
             });
+
           }),
     );
   }
