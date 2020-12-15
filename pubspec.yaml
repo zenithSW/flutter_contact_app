@@ -31,7 +31,8 @@ dependencies:
   permission_handler:
   contacts_service:
   shared_preferences: ^0.5.12+4
-
+  multi_select_item: ^1.0.3
+  easy_search: ^1.0.6
 dev_dependencies:
   flutter_test:
     sdk: flutter

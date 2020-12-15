@@ -1,8 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'contact_screen.dart';
-import 'contacts_page.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:contact_app/Screens/contact_screen.dart';
+import 'package:contact_app/Screens/multi_select.dart';
 class HomePage extends StatefulWidget {
   static const String id = "home_screen";
   @override
@@ -15,7 +14,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          title: const Text('Home Screen'),
+          title: const Text('Contacts App'),
         backgroundColor: Colors.lightBlue,
       ),
       body: Container(
@@ -24,34 +23,14 @@ class _HomePageState extends State<HomePage> {
             Padding(
               padding: const EdgeInsets.only(top: 200,left: 20,right: 20),
               child: InkWell(
-                onTap: ()async {
-                  final PermissionStatus permissionStatus = await _getPermission();
-                  if (permissionStatus == PermissionStatus.granted) {
-                    Navigator.push(
-                        context, MaterialPageRoute(builder: (context) => ShowContactsPage()));
-                  } else {
-                    //If permissions have been denied show standard cupertino alert dialog
-                    showDialog(
-                        context: context,
-                        builder: (BuildContext context) => CupertinoAlertDialog(
-                          title: Text('Permissions error'),
-                          content: Text('Please enable contacts access '
-                              'permission in system settings'),
-                          actions: <Widget>[
-                            CupertinoDialogAction(
-                              child: Text('OK'),
-                              onPressed: () => Navigator.of(context).pop(),
-                            )
-                          ],
-                        ));
-                  }
+                onTap: (){
+                  Navigator.pushNamed(context, MultiContactPage.id);
                 },
                 child: Center(
                   child: Icon(
-                    Icons.verified_user,
-                    color: Colors.lightBlue,
-                    size: 24.0,
-                    semanticLabel: 'Text to announce in accessibility modes',
+                    Icons.account_box_rounded ,
+                    color: Colors.black,
+                    size: 100.0,
                   ),
                 ),
               ),
@@ -63,16 +42,4 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Future<PermissionStatus> _getPermission() async {
-    final PermissionStatus permission = await Permission.contacts.status;
-    if (permission != PermissionStatus.granted &&
-        permission != PermissionStatus.denied) {
-      final Map<Permission, PermissionStatus> permissionStatus =
-      await [Permission.contacts].request();
-      return permissionStatus[Permission.contacts] ??
-          PermissionStatus.undetermined;
-    } else {
-      return permission;
-    }
-  }
 }

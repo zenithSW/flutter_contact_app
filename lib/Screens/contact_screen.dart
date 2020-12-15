@@ -1,74 +1,174 @@
-import 'package:contact_app/Screens/show_details.dart';
+
 import 'package:flutter/material.dart';
 import 'package:contacts_service/contacts_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 
 class ShowContactsPage extends StatefulWidget {
   static const String id = "show_contacts";
+  ShowContactsPage({Key key, this.title}) : super(key: key);
+
+  final String title;
+
   @override
   _ContactsPageState createState() => _ContactsPageState();
 }
 
 class _ContactsPageState extends State<ShowContactsPage> {
-  var currentContact;
-  Iterable<Contact> _contacts;
+  List<Contact> contacts = [];
+  List<Contact> contactsFiltered = [];
+  Map<String, Color> contactsColorMap = new Map();
+  TextEditingController searchController = new TextEditingController();
 
   @override
   void initState() {
-    getContacts();
     super.initState();
+    getPermissions();
+  }
+  getPermissions() async {
+    if (await Permission.contacts.request().isGranted) {
+      getAllContacts();
+      searchController.addListener(() {
+        filterContacts();
+      });
+    }
   }
 
-  Future<void> getContacts() async {
-    //Make sure we already have permissions for contacts when we get to this
-    //page, so we can just retrieve it
-    final Iterable<Contact> contacts = await ContactsService.getContacts();
-    setState(() {
-      _contacts = contacts;
-
+  String flattenPhoneNumber(String phoneStr) {
+    return phoneStr.replaceAllMapped(RegExp(r'^(\+)|\D'), (Match m) {
+      return m[0] == "+" ? "+" : "";
     });
   }
- void  assignName(v) async {
-   SharedPreferences prefs = await SharedPreferences.getInstance();
-   prefs.setString('name',v );
+
+  getAllContacts() async {
+    List colors = [
+      Colors.green,
+      Colors.indigo,
+      Colors.yellow,
+      Colors.orange
+    ];
+    int colorIndex = 0;
+    List<Contact> _contacts = (await ContactsService.getContacts()).toList();
+    _contacts.forEach((contact) {
+      Color baseColor = colors[colorIndex];
+      contactsColorMap[contact.displayName] = baseColor;
+      colorIndex++;
+      if (colorIndex == colors.length) {
+        colorIndex = 0;
+      }
+    });
+    setState(() {
+      contacts = _contacts;
+    });
+  }
+
+  filterContacts() {
+    List<Contact> _contacts = [];
+    _contacts.addAll(contacts);
+    if (searchController.text.isNotEmpty) {
+      _contacts.retainWhere((contact) {
+        String searchTerm = searchController.text.toLowerCase();
+        String searchTermFlatten = flattenPhoneNumber(searchTerm);
+        String contactName = contact.displayName.toLowerCase();
+        bool nameMatches = contactName.contains(searchTerm);
+        if (nameMatches == true) {
+          return true;
+        }
+
+        if (searchTermFlatten.isEmpty) {
+          return false;
+        }
+
+        var phone = contact.phones.firstWhere((phn) {
+          String phnFlattened = flattenPhoneNumber(phn.value);
+          return phnFlattened.contains(searchTermFlatten);
+        }, orElse: () => null);
+
+        return phone != null;
+      });
+    }
+    setState(() {
+      contactsFiltered = _contacts;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    bool isSearching = searchController.text.isNotEmpty;
     return Scaffold(
       appBar: AppBar(
-        title: (Text('Contacts')),
+        title: Text("Contacts"),
       ),
-      body: _contacts != null
-      //Build a list view of all contacts, displaying their avatar and
-      // display name
-          ? ListView.builder(
-        itemCount: _contacts?.length ?? 0,
-        itemBuilder: (BuildContext context, int index) {
-          Contact contact = _contacts?.elementAt(index);
-          assignName(contact.displayName);
-          return ListTile(
-            contentPadding:
-            const EdgeInsets.symmetric(vertical: 2, horizontal: 18),
-            leading: (contact.avatar != null && contact.avatar.isNotEmpty)
-                ? CircleAvatar(
-              backgroundImage: MemoryImage(contact.avatar),
-            )
-                : CircleAvatar(
-              child: Text(contact.initials()),
-              backgroundColor: Theme.of(context).accentColor,
+      body: Container(
+        padding: EdgeInsets.all(20),
+        child: Column(
+          children: <Widget>[
+            Container(
+              child: TextField(
+                controller: searchController,
+                decoration: InputDecoration(
+                    labelText: 'Search',
+                    border: new OutlineInputBorder(
+                        borderSide: new BorderSide(
+                            color: Theme.of(context).primaryColor
+                        )
+                    ),
+                    prefixIcon: Icon(
+                        Icons.search,
+                        color: Theme.of(context).primaryColor
+                    )
+                ),
+              ),
             ),
-            title: Text(contact.displayName ?? ''),
-            //This can be further expanded to showing contacts detail
-            // onPressed().
-            onTap:(){
-              Navigator.pushNamed(context, ShowDetails.id);
-            } ,
-          );
-        },
-      )
-          : Center(child: const CircularProgressIndicator()),
+            Expanded(
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: isSearching == true ? contactsFiltered.length : contacts.length,
+                itemBuilder: (context, index) {
+                  Contact contact = isSearching == true ? contactsFiltered[index] : contacts[index];
+
+                  var baseColor = contactsColorMap[contact.displayName] as dynamic;
+
+                  Color color1 = baseColor[800];
+                  Color color2 = baseColor[400];
+                  return ListTile(
+                      title: Text(contact.displayName),
+                      subtitle: Text(
+                          contact.phones.length > 0 ? contact.phones.elementAt(0).value : ''
+                      ),
+                      leading: (contact.avatar != null && contact.avatar.length > 0) ?
+                      CircleAvatar(
+                        backgroundImage: MemoryImage(contact.avatar),
+                      ) :
+                      Container(
+                          decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                  colors: [
+                                    color1,
+                                    color2,
+                                  ],
+                                  begin: Alignment.bottomLeft,
+                                  end: Alignment.topRight
+                              )
+                          ),
+                          child: CircleAvatar(
+                              child: Text(
+                                  contact.initials(),
+                                  style: TextStyle(
+                                      color: Colors.white
+                                  )
+                              ),
+                              backgroundColor: Colors.transparent
+                          )
+                      )
+                  );
+                },
+              ),
+            )
+          ],
+        ),
+      ),
     );
   }
 

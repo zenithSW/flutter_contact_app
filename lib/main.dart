@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:contact_app/Screens/home_screen.dart';
-import 'package:contact_app/Screens/contacts_page.dart';
 import 'package:contact_app/Screens/contact_screen.dart';
-import 'package:contact_app/Screens/show_details.dart';
+import 'package:contact_app/Screens/multi_select.dart';
+
 
 void main() {
   runApp(MyApp());
@@ -14,6 +14,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
 
         primarySwatch: Colors.blue,
@@ -21,9 +22,8 @@ class MyApp extends StatelessWidget {
       initialRoute: HomePage.id,
       routes: {
         HomePage.id:(context) => HomePage(),
-        ContactPage.id:(context) => ContactPage(),
-        ShowContactsPage.id:(context)=>ShowContactsPage(),
-        ShowDetails.id:(context)=> ShowDetails(),
+        ShowContactsPage.id:(context) => ShowContactsPage(),
+        MultiContactPage.id:(context) => MultiContactPage(),
 
       },
     );
