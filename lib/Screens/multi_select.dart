@@ -6,12 +6,14 @@ class MultiContactPage extends StatefulWidget {
   MultiContactPage({Key key, this.title}) : super(key: key);
 
   final String title;
+  // declared strings for the widget
   final String reloadLabel = 'Reload!';
   final String fireLabel = 'Select';
   final Color floatingButtonColor = Colors.red;
   final IconData reloadIcon = Icons.refresh;
   final IconData fireIcon = Icons.filter_center_focus;
 
+  //override widget
   @override
   _MultiContactPageState createState() => new _MultiContactPageState(
     floatingButtonLabel: this.fireLabel,
@@ -32,7 +34,7 @@ class _MultiContactPageState extends State<MultiContactPage> {
   Color floatingButtonColor;
   String email;
   IconData icon;
-
+  // cons
   _MultiContactPageState({
     this.floatingButtonLabel,
     this.icon,
@@ -114,8 +116,9 @@ class _MultiContactPageState extends State<MultiContactPage> {
           Colors.green,
         );
       } else {
+        // here only is the error it should be _CustomContacts instead of _allContacts
         _uiCustomContacts = _allContacts;
-        _isSelectedContactsView = false;
+        _isSelectedContactsView = true;
         _restateFloatingButton(
           widget.fireLabel,
           Icons.filter_center_focus,
